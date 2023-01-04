@@ -19,13 +19,13 @@ jobs:
         go-version: 1.19
 
     - name: Build
-      run: go build -o ./tmp/go-app ./cmd/app/main.go
+      run: go build -o ./build/go-app ./cmd/app/main.go
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v2
       with:
         name: go-app
-        path: ./tmp
+        path: ./build
 
   deploy:
     runs-on: ubuntu-latest
