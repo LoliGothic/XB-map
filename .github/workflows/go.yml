@@ -18,26 +18,29 @@ jobs:
       with:
         go-version: 1.19
 
-    - name: Copy static controller files
-      run: cp -r controller build/controller
-
-    - name: Copy static crypto files
-      run: cp -r crypto build/crypto
-
-    - name: Copy static model files
-      run: cp -r model build/model
-
     - name: Build
-      run: go build -o build/go-app.exe -v ./cmd/app
+      run: go build -o ./tmp/go-app ./cmd/app/main.go
 
-    - name: Test
-      run: go test ./cmd/app
-      
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v2
+      with:
+        name: go-app
+        path: ./tmp
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v2
+      with:
+        name: go-app
+
     - name: Deploy to Azure
-      uses: Azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v2
       with:
         # Name of the Azure Web App
         app-name: xb-map-backend
         # Applies to Web App only: Path to package or folder. *.zip, *.war, *.jar or a folder to deploy
-        package: cmd/app
+        package: .
         publish-profile: ${{ secrets.azureWebAppPublishProfile }}
