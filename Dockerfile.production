@@ -1,0 +1,17 @@
+FROM golang:1.19.3-alpine
+
+COPY go.mod /go/src/app/go.mod
+COPY go.sum /go/src/app/go.sum
+
+WORKDIR /go/src/app
+COPY . /go/src/app/
+
+# modファイルにあるパッケージをダウンロード
+RUN go mod download
+
+RUN go build -o ./tmp/main ./cmd/app/main.go
+
+EXPOSE 8080
+
+# airコマンドでgoを起動
+CMD ["tmp/main"]
