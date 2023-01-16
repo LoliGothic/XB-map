@@ -27,7 +27,7 @@ func GetRouter() *gin.Engine {
 
 func setCors(r *gin.Engine) {
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://gentle-tree-0b58de200.2.azurestaticapps.net/", "http://localhost:3000"},
+		AllowOrigins:     []string{"https://ambitious-grass-0f2747200.2.azurestaticapps.net", "http://localhost:3000"},
 		AllowMethods:     []string{"PUT", "PATCH", "GET", "DELETE", "POST"},
 		AllowHeaders:     []string{"Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
