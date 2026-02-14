@@ -9,16 +9,6 @@ COPY . /go/src/app/
 COPY go.mod /go/src/app/go.mod
 COPY go.sum /go/src/app/go.sum
 
-# airをインストール
-# RUN go get -u github.com/cosmtrek/air && \
-#     go build -o /go/bin/air github.com/cosmtrek/air
-
-# gin，gorm，driver，uuidのインストール
-# RUN go get -u github.com/gin-gonic/gin && \
-#     go get github.com/jinzhu/gorm && \
-#     go get github.com/go-sql-driver/mysql && \
-#     go get github.com/google/uuid
-
 # modファイルにあるパッケージをダウンロード
 RUN go mod download
 
