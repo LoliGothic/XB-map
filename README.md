@@ -12,8 +12,7 @@
 🌐 Frontend Repository  
 https://github.com/LoliGothic/XB-map-view
 
-⚙ Backend Repository  
-https://github.com/LoliGothic/XB-map
+⚙ Backend Repository（本リポジトリ）
 
 ## 開発背景
 
