@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: ./build/app/Dockerfile
+    environment:
+      DB_DSN: ${DB_DSN}
     ports:
      - "8080:8080"
     volumes:
@@ -23,7 +25,7 @@ services:
       MYSQL_USER: user
       MYSQL_PASSWORD: password
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: xb-map
+      MYSQL_DATABASE: xb_map
     ports:
       - "3306:3306"
     volumes:
