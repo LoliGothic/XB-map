@@ -1,8 +1,11 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/LoliGothic/XB-map/model"
+  "net/http"
+
+  "github.com/gin-contrib/sessions"
+  "github.com/gin-gonic/gin"
+  "github.com/LoliGothic/XB-map/model"
 )
 
 type PreviousUser struct {
@@ -18,14 +21,30 @@ type NewUser struct {
 }
 
 func postLogin(c *gin.Context) {
-	var previousUser PreviousUser //PreviousUser型の変数を定義
-	c.BindJSON(&previousUser) //受け取ったJSONをpreviousUserに代入
-	user, err := model.Login(previousUser.Password, previousUser.Email)
-	if err == nil {
-		c.JSON(200, user)
-	} else {
-		c.JSON(400, err.Error())
-	}
+  var previousUser PreviousUser
+  if err := c.ShouldBindJSON(&previousUser); err != nil {
+    c.JSON(http.StatusBadRequest, "invalid request")
+    return
+  }
+
+  user, err := model.Login(previousUser.Password, previousUser.Email)
+  if err != nil {
+    c.JSON(http.StatusUnauthorized, "invalid email or password")
+    return
+  }
+
+  sess := sessions.Default(c)
+  sess.Set("userId", user.Id) // user.Id はあなたのUser構造体に合わせる
+  if err := sess.Save(); err != nil {
+    c.JSON(http.StatusInternalServerError, "failed to create session")
+    return
+  }
+
+  c.JSON(http.StatusOK, gin.H{
+    "id": user.Id,
+    "name": user.Name,
+    "email": user.Email,
+  })
 }
 
 func postSingup(c *gin.Context) {
@@ -36,16 +55,5 @@ func postSingup(c *gin.Context) {
 		c.JSON(200, user)
 	} else {
 		c.JSON(400, err.Error())
-	}
-}
-
-func postCheckLogin(c *gin.Context) {
-	var loginUser PreviousUser
-	c.BindJSON(&loginUser)
-	user, err := model.CheckLogin(loginUser.Password, loginUser.Email)
-	if err == nil {
-		c.JSON(200, user)
-	} else {
-		c.JSON(500, err.Error())
 	}
 }

@@ -1,15 +1,17 @@
 package controller
 
 import (
+	"net/http"
 	"strconv"
+
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/LoliGothic/XB-map/model"
 )
 
-type NewReview struct {
-	UserId int
-	ShopId int
-	Explanation string
+type NewReviewRequest struct {
+	ShopId      int    `json:"shopId"`
+	Explanation string `json:"explanation"`
 }
 
 type DeleteReview struct {
@@ -18,30 +20,97 @@ type DeleteReview struct {
 }
 
 func getReview(c *gin.Context) {
-	// c.Paramで取得できる値はstringなのでintにキャストしてあげる
-	shopId, _ := strconv.Atoi(c.Param("shopId"))
-	
-	review := model.ReviewList(shopId)
+  shopId, _ := strconv.Atoi(c.Param("shopId"))
 
-	c.JSON(200, review)
+  reviews, err := model.ReviewList(shopId)
+  if err != nil {
+    c.JSON(500, err.Error())
+    return
+  }
+
+  c.JSON(200, reviews)
 }
 
 func postReview(c *gin.Context) {
-	var newReview NewReview
-	c.BindJSON(&newReview)
-	review, err := model.AddReview(newReview.UserId, newReview.ShopId, newReview.Explanation)
-
-	if err == nil {
-		c.JSON(200, review)
-	} else {
-		c.JSON(400, err.Error())
+	// ① セッションから userId
+	sess := sessions.Default(c)
+	v := sess.Get("userId")
+	if v == nil {
+		c.JSON(http.StatusUnauthorized, "not logged in")
+		return
 	}
+
+	// 型変換
+	userId := 0
+	switch t := v.(type) {
+	case int:
+		userId = t
+	case int64:
+		userId = int(t)
+	case float64:
+		userId = int(t)
+	default:
+		c.JSON(http.StatusUnauthorized, "invalid session")
+		return
+	}
+
+	// ② body から shopId / explanation だけ受け取る
+	var req NewReviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	// ③ modelへ（userIdはサーバが決める）
+	review, err := model.AddReview(userId, req.ShopId, req.Explanation)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, review)
 }
 
-func deleteReview(c *gin.Context) {
-	var deleteReview DeleteReview
-	c.BindJSON(&deleteReview)
-	review := model.DeleteReview(deleteReview.Id, deleteReview.ShopId)
 
-	c.JSON(200, review)
+func deleteReviewByID(c *gin.Context) {
+	// ① セッションから userId を取得（ログイン必須）
+	sess := sessions.Default(c)
+	v := sess.Get("userId")
+	if v == nil {
+		c.JSON(http.StatusUnauthorized, "not logged in")
+		return
+	}
+
+	// 型変換（保存方式で型がズレることがある）
+	var userId int
+	switch t := v.(type) {
+	case int:
+		userId = t
+	case int64:
+		userId = int(t)
+	case float64:
+		userId = int(t)
+	default:
+		c.JSON(http.StatusUnauthorized, "invalid session")
+		return
+	}
+
+	// ② パラメータから reviewId
+	idStr := c.Param("id")
+	reviewId, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, "invalid review id")
+		return
+	}
+
+	// ③ “投稿者本人だけ削除”を model 側で強制
+	reviews, err := model.DeleteReviewByID(reviewId, userId)
+	if err != nil {
+		// err の種類で 403/404 などに分けてもいい
+		c.JSON(http.StatusForbidden, err.Error())
+		return
+	}
+
+	// ④ 更新後のレビュー一覧返す（今の仕様に合わせる）
+	c.JSON(http.StatusOK, reviews)
 }
