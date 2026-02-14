@@ -95,18 +95,6 @@ func Login(password string, email string) (*User, error) {
 	return &user, nil
 }
 
-func CheckLogin(password string, email string) (*User, error) {
-	user := User{}
-
-	db.Where("email = ?", email).Find(&user)
-	if user.Id == 0 || user.Password != password {
-		err := errors.New("ログイン情報と一致しません")
-		return nil , err
-	}
-
-	return &user, nil
-}
-
 func ChangeName(email string, newName string) (error) {
 	if utf8.RuneCountInString(newName) <= 0 || utf8.RuneCountInString(newName) > 20 {
 		err := errors.New("ユーザー名は20文字以内で入力してください")
@@ -163,4 +151,12 @@ func ChangePassword(email string, currentPassword string, newPassword string, ch
 	db.Model(&user).Update("password", hash)
 
 	return &user, nil
+}
+
+func GetUserByID(userId int) (User, error) {
+  var user User
+  if err := db.First(&user, userId).Error; err != nil {
+    return User{}, err
+  }
+  return user, nil
 }
